@@ -1,0 +1,36 @@
+{
+  "name": "chat",
+  "description": "Eventually consistent chat rooms via CRDT",
+  "author": "Damon Oehlman <damon.oehlman@sidelab.com>",
+  "tags": [
+    "chat",
+    "interaction",
+    "realtime"
+  ],
+  "version": "0.0.0",
+  "engines": {
+    "node": ">= 0.8.x < 0.9.0"
+  },
+  "dependencies": {
+    "crdt": "3.4.x"
+  },
+  "devDependencies": {
+    "debug": "*",
+    "mocha": "1.8.x",
+    "random-name": "0.1.x",
+    "uuid": "1.4.x",
+    "ws": "0.4.x",
+    "websocket-stream": "0.0.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/DamonOehlman/scuttlechat.git"
+  },
+  "bugs": {
+    "url": "http://github.com/DamonOehlman/scuttlechat/issues"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec -t 2s"
+  },
+  "contributors": []
+}
