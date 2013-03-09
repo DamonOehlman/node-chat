@@ -34,7 +34,14 @@ Chat.prototype.open = function() {
     var chat = this;
 
     function messageAdd(row) {
-        chat.emit('message', row.id, row.state.data);
+        // split the row id to get the user and time details
+        var parts = row.id.split('|'),
+            ticks = parseInt(parts[0]),
+            user = chat.users.rows[parts[1]];
+
+        if (user && user.state) {
+            chat.emit('message', row.state.data, user.state.details, ticks);
+        }
     }
 
     function userAdd(row) {
