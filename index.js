@@ -39,9 +39,15 @@ Chat.prototype.open = function() {
             ticks = parseInt(parts[0]),
             user = chat.users.rows[parts[1]];
 
-        if (user && user.state) {
-            chat.emit('message', row.state.data, user.state.details, parts[1], ticks);
-        }
+        chat.emit('message', {
+            data: row.state.data,
+            time: new Date(ticks),
+
+            uid:  parts[1],
+            user: user && user.state ? user.state.details : undefined,
+
+            mine: parts[1] === chat.uid
+        });
     }
 
     function userAdd(row) {

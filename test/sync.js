@@ -46,10 +46,10 @@ describe('chat sync', function() {
     });
 
     it('should be able to send a message from client 0 --> client 1', function(done) {
-        clients[1].once('message', function(data, user) {
-            assert.equal(data, 'hi');
-            assert(user, 'No user details');
-            assert.equal(user.nick, 'Bill');
+        clients[1].once('message', function(msg) {
+            assert.equal(msg.data, 'hi');
+            assert(msg.user, 'No user details');
+            assert.equal(msg.user.nick, 'Bill');
 
             done();
         });
@@ -58,10 +58,10 @@ describe('chat sync', function() {
     });
 
     it('should be able to send a message from client 1 --> client 0', function(done) {
-        clients[0].once('message', function(data, user) {
-            assert.equal(data, 'ho');
-            assert(user, 'No user details');
-            assert.equal(user.nick, 'Ted');
+        clients[0].once('message', function(msg) {
+            assert.equal(msg.data, 'ho');
+            assert(msg.user, 'No user details');
+            assert.equal(msg.user.nick, 'Ted');
 
             done();
         });
