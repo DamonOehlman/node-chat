@@ -40,7 +40,7 @@ Chat.prototype.open = function() {
             user = chat.users.rows[parts[1]];
 
         if (user && user.state) {
-            chat.emit('message', row.state.data, user.state.details, ticks);
+            chat.emit('message', row.state.data, user.state.details, parts[1], ticks);
         }
     }
 
