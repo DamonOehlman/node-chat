@@ -1,6 +1,6 @@
 var assert = require('assert'),
     uuid = require('uuid'),
-    Chat = require('../'),
+    chat = require('../'),
     clients = [];
 
 describe('chat sync', function() {

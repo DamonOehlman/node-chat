@@ -12,7 +12,8 @@
     "node": ">= 0.8.x < 0.9.0"
   },
   "dependencies": {
-    "crdt": "3.4.x"
+    "crdt": "3.4.x",
+    "mux-demux": "3.5.x"
   },
   "devDependencies": {
     "debug": "*",
