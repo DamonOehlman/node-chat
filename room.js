@@ -1,5 +1,6 @@
 var Doc = require('crdt/doc'),
     util = require('util'),
+    uuid = require('uuid'),
     MuxDemux = require('mux-demux');
 
 function Chatroom(opts) {
@@ -32,15 +33,15 @@ module.exports = Chatroom;
 */
 Chatroom.prototype.open = function() {
 
-    var chat = this;
+    var room = this;
 
     function messageAdd(row) {
         // split the row id to get the user and time details
         var parts = row.id.split('|'),
             ticks = parseInt(parts[0]),
-            user = chat.users.rows[parts[1]];
+            user = room.users.rows[parts[1]];
 
-        chat.emit('message', {
+        room.emit('message', {
             data: row.state.data,
             time: new Date(ticks),
 
@@ -50,17 +51,32 @@ Chatroom.prototype.open = function() {
     }
 
     function userAdd(row) {
-        chat.emit('message', {
-            type: 'USERJOIN',
-            time: new Date(),
-
-            uid:  row.id,
-            user: row.state.details
+        process.nextTick(function() {
+            // if we have authentication listeners, then trigger with the user details
+            if (room.listeners('authenticate').length > 0) {
+                room.emit('authenticate', row.state.details, row);
+            }
+            // otherwise, update the user and supply the authenticated flag
+            else {
+                row.set('authenticated', true);                
+            }
         });
     }
 
+    function userChanged(row, changed) {
+        if (changed && changed.authenticated) {
+            room.emit('message', {
+                type: 'USERJOIN',
+                time: new Date(),
+
+                uid:  row.id,
+                user: row.state.details
+            });        
+        }
+    }
+
     function userRemove(row) {
-        chat.emit('message', {
+        room.emit('message', {
             type: 'USERLEAVE',
             time: new Date(),
 
@@ -71,13 +87,11 @@ Chatroom.prototype.open = function() {
     // wire up event handler
     this.messages.on('add', messageAdd);
     this.users.on('add', userAdd);
+    this.users.on('changes', userChanged);
     this.users.on('remove', userRemove);
 
     // add a close function override
     this.close = function() {
-        // call the inherited behaviour
-        Chat.prototype.close.call(this);
-
         // remove the event handlers
         this.messages.removeListener('add', messageAdd);
         this.users.removeListener('add', userAdd);
@@ -95,10 +109,13 @@ Join the chat room with the uid and details specified.  This function
 returns a MuxDemux stream that can be used to push messages into the 
 room.
 */
-Chatroom.prototype.join = function(uid, details) {
-    var mdm, room = this;
+Chatroom.prototype.join = function(details) {
+    var mdm, room = this,
+        uid = details.id || details.uid || uuid.v4(),
+        user;
 
-    if (! uid) throw new Error('A uid is required to join the room');
+    // ensure the uid is saved in the details
+    details.uid = uid;
 
     // add the user
     this.add({ id: uid, type: 'user', details: details });
@@ -108,15 +125,26 @@ Chatroom.prototype.join = function(uid, details) {
     mdm.on('connection', function(stream) {
         if (stream.readable) {
             stream.on('data', function(data) {
-                var id = new Date().getTime() + '|' + uid;
+                user = user || room.users.rows[uid];
 
-                room.add({ id: id, type: 'message', data: data });
+                // only add messages from authenticated users
+                if (user && user.state.authenticated) {
+                    var id = new Date().getTime() + '|' + uid;
+
+                    room.add({ id: id, type: 'message', data: data });
+                }
             });
         }
 
         if (stream.writable) {
+            // if the user is authenticated, then send messages
             room.on('message', function(msg) {
-                stream.write(msg);
+                user = user || room.users.rows[uid];
+
+                // only write messages out if the user is authenticated
+                if (user && user.state.authenticated) {
+                    stream.write(msg);
+                }
             });
         }
     });
