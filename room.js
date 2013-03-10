@@ -45,18 +45,27 @@ Chatroom.prototype.open = function() {
             time: new Date(ticks),
 
             uid:  parts[1],
-            user: user && user.state ? user.state.details : undefined,
-
-            mine: parts[1] === chat.uid
+            user: user && user.state ? user.state.details : undefined
         });
     }
 
     function userAdd(row) {
-        chat.emit('join', row.id, row.state.details);
+        chat.emit('message', {
+            type: 'USERJOIN',
+            time: new Date(),
+
+            uid:  row.id,
+            user: row.state.details
+        });
     }
 
     function userRemove(row) {
-        chat.emit('leave', row.id, row.state.details);
+        chat.emit('message', {
+            type: 'USERLEAVE',
+            time: new Date(),
+
+            uid:  row.id
+        });
     }
 
     // wire up event handler
@@ -80,32 +89,6 @@ Chatroom.prototype.open = function() {
 };
 
 /**
-## close()
-
-Close the chat instance
-*/
-Chatroom.prototype.close = function() {
-    // TODO: handle room closes
-    if (! this.uid) return;
-
-    // remove the user from the set
-    this.users.remove(this.uid);
-};
-
-/**
-## identify(id, details)
-
-Identify ourselves to the chat room.
-*/
-Chatroom.prototype.identify = function(uid, details) {
-    // save the uid
-    this.uid = uid;
-
-    // add ourselves to the room
-    this.add({ id: uid, type: 'user', details: details });
-};
-
-/**
 ## join(uid, details)
 
 Join the chat room with the uid and details specified.  This function 
@@ -123,25 +106,23 @@ Chatroom.prototype.join = function(uid, details) {
     // create the muxdemux instance
     mdm = MuxDemux();
     mdm.on('connection', function(stream) {
-        stream.on('data', function(data) {
-            var id = new Date().getTime() + '|' + uid;
+        if (stream.readable) {
+            stream.on('data', function(data) {
+                var id = new Date().getTime() + '|' + uid;
 
-            room.add({ id: id, type: 'message', data: data });
-        });
+                room.add({ id: id, type: 'message', data: data });
+            });
+        }
+
+        if (stream.writable) {
+            room.on('message', function(msg) {
+                stream.write(msg);
+            });
+        }
     });
+
+    // add the uid to the muxdemux object
+    mdm.uid = uid;
 
     return mdm;
 };
-
-/**
-## send(text)
-*/
-Chatroom.prototype.send = function(data) {
-    var id = new Date().getTime() + '|' + (this.uid || '');
-
-    // if the user id has not been defined, raise an error
-    if (! this.uid) throw new Error('Identity unknown - cannot send message');
-
-    // add the message
-    this.add({ id: id, type: 'message', data: data });
-}
