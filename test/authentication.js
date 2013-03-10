@@ -16,7 +16,7 @@ describe('chat authentication tests', function() {
     })
 
     it('should be able to connect to the room', function() {
-        connections[0] = room.connect({ nick: randomName().replace(/\s/, '') });
+        connections[0] = room.connect();
     });
 
     it('should not be able to send messages as the client is not authenticated', function(done) {

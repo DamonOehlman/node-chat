@@ -11,18 +11,22 @@ describe('simple chat room initialization and client tests', function() {
     });
 
     it('should be able to connect to the room', function() {
-        connections[0] = room.connect({ nick: randomName().replace(/\s/, '') });
+        connections[0] = room.connect();
     });
 
     it('should be able to send messages to the room', function(done) {
         var client = chat.client();
 
-        room.once('message', function(msg) {
-            assert.equal(msg.data, 'hello');
-            done();
+        room.on('message', function handleMessage(msg) {
+            if (msg.data === 'hello') {
+                room.removeListener('message', handleMessage);
+                done();
+            }
         });
 
         client.pipe(connections[0]).pipe(client);
+
+        client.identify({ nick: randomName().replace(/\s/g, '') });
         client.createWriteStream().write('hello');
     });
 

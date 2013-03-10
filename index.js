@@ -13,7 +13,7 @@ exports.client = function() {
     client.identify = function(details) {
         client.createWriteStream().write({
             type: 'ident',
-            details: details
+            user: details
         });
     };
 

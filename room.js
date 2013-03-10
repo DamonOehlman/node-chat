@@ -50,27 +50,32 @@ Chatroom.prototype.open = function() {
     }
 
     function connectionAdd(row) {
-        process.nextTick(function() {
-            // if we have authentication listeners, then trigger with the user details
-            if (room.listeners('authenticate').length > 0) {
-                room.emit('authenticate', row.state.details, row);
-            }
-            // otherwise, update the user and supply the authenticated flag
-            else {
-                row.set('authenticated', true);                
-            }
-        });
     }
 
     function connectionChanged(row, changed) {
-        if (changed && changed.authenticated) {
-            room.emit('message', {
-                type: 'USERJOIN',
-                time: new Date(),
+        if (changed) {
+            // if the user is changed, then process authentication 
+            if (changed.user) {
+                row.set('authenticated', false);
 
-                id:   row.id,
-                user: row.state.details
-            });        
+                // if we have authentication listeners, then trigger with the user details
+                if (room.listeners('authenticate').length > 0) {
+                    room.emit('authenticate', row.state.user, row);
+                }
+                // otherwise, update the user and supply the authenticated flag
+                else {
+                    row.set('authenticated', true);                
+                }
+            }
+            else if (changed.authenticated === true) {
+                room.emit('message', {
+                    type: 'USERJOIN',
+                    time: new Date(),
+
+                    id:   row.id,
+                    user: row.state.user
+                });        
+            }
         }
     }
 
@@ -123,11 +128,20 @@ Chatroom.prototype.connect = function() {
     mdm.on('connection', function(stream) {
         if (stream.readable) {
             stream.on('data', function(data) {
-                // only add messages from authenticated users
-                if (connection.state.authenticated) {
-                    var mid = new Date().getTime() + '|' + id;
+                if (typeof data == 'string' || (data instanceof String) || (data instanceof Buffer)) {
+                    room.processMessage(connection, data);
+                }
+                else if (typeof data == 'object') {
+                    switch (data.type) {
 
-                    room.add({ id: mid, type: 'message', data: data });
+                    case 'message':
+                        room.processMessage(connection, data.data || data.message || data.text);
+                        break;
+
+                    case 'ident':
+                        room.processIdent(connection, data);
+                        break;
+                    }
                 }
             });
         }
@@ -147,4 +161,27 @@ Chatroom.prototype.connect = function() {
     mdm.id = id;
 
     return mdm;
+};
+
+/**
+## processIdent(connection, data)
+*/
+Chatroom.prototype.processIdent = function(connection, data) {
+    // set the user details for the connection
+    connection.set('user', data.user);
+};
+
+/**
+## processMessage(connection, text)
+*/
+Chatroom.prototype.processMessage = function(connection, text) {
+    var id;
+
+    if (! connection.state.authenticated) return;
+
+    this.add({
+        id: new Date().getTime() + '|' + connection.id, 
+        type: 'message', 
+        data: text 
+    });
 };
