@@ -6,26 +6,27 @@ var assert = require('assert'),
     MuxDemux = require('mux-demux'),
     count = 1;
 
-function newClient() {  
-    var uid = uuid.v4(),
-        client = room.join({ uid: uid, nick: randomName().replace(/\s/, '') }),
-        mdm = MuxDemux();
+function newConnection() {  
+    var connection = room.connect(),
+        client = chat.client();
 
     count += 1;
     console.log('created new client - total = ' + count);
 
     // when we get a message from the new client create another
     room.on('message', function handleMessage(msg) {
-        assert.equal(msg.uid, uid);
+        assert.equal(msg.id, connection.id);
 
         if (msg.data && msg.data === 'hello') {
             room.removeListener('message', handleMessage);
-            newClient();
+            newConnection();
         }
     });
 
-    mdm.pipe(client).pipe(mdm);
-    mdm.createWriteStream().write('hello');
+    client.pipe(connection).pipe(client);
+
+    client.identify({ nick: randomName().replace(/\s/g, '') });
+    client.createWriteStream().write('hello');
 }
 
-newClient();
+newConnection();
