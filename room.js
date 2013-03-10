@@ -12,14 +12,13 @@ function Chatroom(opts) {
     opts = opts || {};
 
     // init
-    this.uid = '';
     this.store = {};
 
     // initialise the messages
     this.messages = this.createSeq('type', 'message');
 
     // initialise the room members
-    this.users = this.createSet('type', 'user');
+    this.connections = this.createSet('type', 'connection');
 
     // open the chat instance
     this.open();
@@ -39,18 +38,18 @@ Chatroom.prototype.open = function() {
         // split the row id to get the user and time details
         var parts = row.id.split('|'),
             ticks = parseInt(parts[0]),
-            user = room.users.rows[parts[1]];
+            connection = room.connections.rows[parts[1]];
 
         room.emit('message', {
             data: row.state.data,
             time: new Date(ticks),
 
-            uid:  parts[1],
-            user: user && user.state ? user.state.details : undefined
+            id:   parts[1],
+            user: connection && connection.state ? connection.state.user : undefined
         });
     }
 
-    function userAdd(row) {
+    function connectionAdd(row) {
         process.nextTick(function() {
             // if we have authentication listeners, then trigger with the user details
             if (room.listeners('authenticate').length > 0) {
@@ -63,39 +62,40 @@ Chatroom.prototype.open = function() {
         });
     }
 
-    function userChanged(row, changed) {
+    function connectionChanged(row, changed) {
         if (changed && changed.authenticated) {
             room.emit('message', {
                 type: 'USERJOIN',
                 time: new Date(),
 
-                uid:  row.id,
+                id:   row.id,
                 user: row.state.details
             });        
         }
     }
 
-    function userRemove(row) {
+    function connectionRemove(row) {
         room.emit('message', {
             type: 'USERLEAVE',
             time: new Date(),
 
-            uid:  row.id
+            id:   row.id
         });
     }
 
     // wire up event handler
     this.messages.on('add', messageAdd);
-    this.users.on('add', userAdd);
-    this.users.on('changes', userChanged);
-    this.users.on('remove', userRemove);
+    this.connections.on('add', connectionAdd);
+    this.connections.on('changes', connectionChanged);
+    this.connections.on('remove', connectionRemove);
 
     // add a close function override
     this.close = function() {
         // remove the event handlers
         this.messages.removeListener('add', messageAdd);
-        this.users.removeListener('add', userAdd);
-        this.users.removeListener('remove', userRemove);
+        this.connections.removeListener('add', connectionAdd);
+        this.connections.removeListener('changes', connectionChanged);
+        this.connections.removeListener('remove', connectionRemove);
 
         // remove this override
         this.close = undefined;
@@ -103,35 +103,31 @@ Chatroom.prototype.open = function() {
 };
 
 /**
-## join(uid, details)
+## connect(details)
 
-Join the chat room with the uid and details specified.  This function 
+Connect to the the chat room with the uid and details specified.  This function 
 returns a MuxDemux stream that can be used to push messages into the 
 room.
 */
-Chatroom.prototype.join = function(details) {
-    var mdm, room = this,
-        uid = details.id || details.uid || uuid.v4(),
-        user;
+Chatroom.prototype.connect = function() {
+    var id = uuid.v4(),
+        mdm, 
+        room = this, 
+        connection;
 
-    // ensure the uid is saved in the details
-    details.uid = uid;
-
-    // add the user
-    this.add({ id: uid, type: 'user', details: details });
+    // add the connection
+    connection = this.add({ id: id, type: 'connection' });
 
     // create the muxdemux instance
     mdm = MuxDemux();
     mdm.on('connection', function(stream) {
         if (stream.readable) {
             stream.on('data', function(data) {
-                user = user || room.users.rows[uid];
-
                 // only add messages from authenticated users
-                if (user && user.state.authenticated) {
-                    var id = new Date().getTime() + '|' + uid;
+                if (connection.state.authenticated) {
+                    var mid = new Date().getTime() + '|' + id;
 
-                    room.add({ id: id, type: 'message', data: data });
+                    room.add({ id: mid, type: 'message', data: data });
                 }
             });
         }
@@ -139,10 +135,8 @@ Chatroom.prototype.join = function(details) {
         if (stream.writable) {
             // if the user is authenticated, then send messages
             room.on('message', function(msg) {
-                user = user || room.users.rows[uid];
-
                 // only write messages out if the user is authenticated
-                if (user && user.state.authenticated) {
+                if (connection.state.authenticated) {
                     stream.write(msg);
                 }
             });
@@ -150,7 +144,7 @@ Chatroom.prototype.join = function(details) {
     });
 
     // add the uid to the muxdemux object
-    mdm.uid = uid;
+    mdm.id = id;
 
     return mdm;
 };

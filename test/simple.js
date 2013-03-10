@@ -1,8 +1,7 @@
 var assert = require('assert'),
     chat = require('../'),
-    clients = [],
+    connections = [],
     randomName = require('random-name'),
-    MuxDemux = require('mux-demux'),
     uuid = require('uuid'),
     room;
 
@@ -11,31 +10,31 @@ describe('simple chat room initialization and client tests', function() {
         room = chat.room();
     });
 
-    it('should be able to join the room', function() {
-        clients[0] = room.join({ nick: randomName().replace(/\s/, '') });
+    it('should be able to connect to the room', function() {
+        connections[0] = room.connect({ nick: randomName().replace(/\s/, '') });
     });
 
     it('should be able to send messages to the room', function(done) {
-        var mdm = MuxDemux();
+        var client = chat.client();
 
         room.once('message', function(msg) {
             assert.equal(msg.data, 'hello');
             done();
         });
 
-        mdm.pipe(clients[0]).pipe(mdm);
-        mdm.createWriteStream().write('hello');
+        client.pipe(connections[0]).pipe(client);
+        client.createWriteStream().write('hello');
     });
 
     it('should be able to capture messages coming via the connected stream', function(done) {
-        var mdm = MuxDemux(),
-            stream = mdm.createStream();
+        var client = chat.client(),
+            stream = client.createStream();
 
-        mdm.pipe(clients[0]).pipe(mdm);
+        client.pipe(connections[0]).pipe(client);
 
         stream.once('data', function(msg) {
             assert.equal(msg.data, 'hello');
-            assert.equal(msg.uid, clients[0].uid);
+            assert.equal(msg.id, connections[0].id);
 
             done();
         });

@@ -8,18 +8,20 @@ var assert = require('assert'),
 
 function newClient() {  
     var uid = uuid.v4(),
-        client = room.join(uid, { nick: randomName().replace(/\s/, '') }),
+        client = room.join({ uid: uid, nick: randomName().replace(/\s/, '') }),
         mdm = MuxDemux();
 
     count += 1;
     console.log('created new client - total = ' + count);
 
     // when we get a message from the new client create another
-    room.once('message', function(msg) {
+    room.on('message', function handleMessage(msg) {
         assert.equal(msg.uid, uid);
-        assert.equal(msg.data, 'hello');
 
-        newClient();
+        if (msg.data && msg.data === 'hello') {
+            room.removeListener('message', handleMessage);
+            newClient();
+        }
     });
 
     mdm.pipe(client).pipe(mdm);

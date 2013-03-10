@@ -1,8 +1,7 @@
 var assert = require('assert'),
     chat = require('../'),
-    clients = [],
+    connections = [],
     randomName = require('random-name'),
-    MuxDemux = require('mux-demux'),
     uuid = require('uuid'),
     room;
 
@@ -16,12 +15,12 @@ describe('chat authentication tests', function() {
         });
     })
 
-    it('should be able to join the room', function() {
-        clients[0] = room.join({ nick: randomName().replace(/\s/, '') });
+    it('should be able to connect to the room', function() {
+        connections[0] = room.connect({ nick: randomName().replace(/\s/, '') });
     });
 
     it('should not be able to send messages as the client is not authenticated', function(done) {
-        var mdm = MuxDemux();
+        var client = chat.client();
 
         function handleMessage(msg) {
             throw new Error('Received message and should not have as we have not authenticated');
@@ -34,33 +33,33 @@ describe('chat authentication tests', function() {
             done();
         }, 100);
 
-        mdm.pipe(clients[0]).pipe(mdm);
-        mdm.createWriteStream().write('hello');
+        client.pipe(connections[0]).pipe(client);
+        client.createWriteStream().write('hello');
     });
 
     it('should be able to authenticate the user', function(done) {
-        var user = room.users.get(clients[0].uid);
+        var connection = room.connections.get(connections[0].id);
 
         room.once('message', function(msg) {
             assert.equal(msg.type, 'USERJOIN');
-            assert.equal(msg.uid, clients[0].uid);
+            assert.equal(msg.id, connections[0].id);
 
             done();
         });
 
         // flag as authenticated
-        user.set('authenticated', true);
+        connection.set('authenticated', true);
     });
 
     it('should be able to capture messages coming via the connected stream', function(done) {
-        var mdm = MuxDemux(),
-            stream = mdm.createStream();
+        var client = chat.client(),
+            stream = client.createStream();
 
-        mdm.pipe(clients[0]).pipe(mdm);
+        client.pipe(connections[0]).pipe(client);
 
         stream.once('data', function(msg) {
             assert.equal(msg.data, 'hello');
-            assert.equal(msg.uid, clients[0].uid);
+            assert.equal(msg.id, connections[0].id);
 
             done();
         });
