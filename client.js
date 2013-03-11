@@ -1,7 +1,7 @@
 var MuxDemux = require('mux-demux'),
     Stream = require('stream');
 
-module.exports = function(roomStream, user) {
+var client = module.exports = function(roomStream, user) {
     var client = MuxDemux(),
         stream = client.createStream();
 
@@ -17,10 +17,12 @@ module.exports = function(roomStream, user) {
         throw new Error('If arguments are provided, the first argument must be a stream');
     }
 
-    // if we have a target stream, then pipe from the new client into the stream and back
-    if (roomStream) {
-        client.pipe(roomStream).pipe(client);
-    }
+    // if we don't have a room stream just return the client
+    // as we are doing things manually
+    if (! roomStream) return client;
+
+    // pipe from the new client into the stream and back
+    client.pipe(roomStream).pipe(client);
 
     // patch in an identify method into the stream
     stream.identify = function(details) {
