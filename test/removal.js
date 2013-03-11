@@ -3,9 +3,10 @@ var assert = require('assert'),
     connections = [],
     randomName = require('random-name'),
     uuid = require('uuid'),
+    client,
     room;
 
-describe('simple chat room initialization and client tests', function() {
+describe('message removal tests', function() {
     it('should be able to create a new chat room', function() {
         room = chat.room();
     });
@@ -15,7 +16,7 @@ describe('simple chat room initialization and client tests', function() {
     });
 
     it('should be able to send messages to the room', function(done) {
-        var client = chat.client(connections[0]);
+        client = chat.client(connections[0]);
 
         room.on('message', function handleMessage(msg) {
             if (msg.data === 'hello') {
@@ -28,16 +29,16 @@ describe('simple chat room initialization and client tests', function() {
         client.write('hello');
     });
 
-    it('should be able to capture messages coming via the connected stream', function(done) {
-        var client = chat.client(connections[0]);
+    it('message removal should trigger a notification', function(done) {
+        var firstMessage = room.messages._array[0];
 
         client.once('data', function(msg) {
-            assert.equal(msg.data, 'hello');
-            assert.equal(msg.cid, connections[0].id);
+            assert.equal(msg.type, 'MSGREMOVE');
+            assert.equal(msg.time + '|' + msg.cid, firstMessage.id);
 
             done();
-        });
+       });
 
-        client.write('hello');
+        room.messages.remove(firstMessage.id);
     });
 });

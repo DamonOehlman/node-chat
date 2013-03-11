@@ -43,10 +43,21 @@ Chatroom.prototype.open = function() {
 
         room.emit('message', {
             data: row.state.data,
-            time: new Date(ticks),
+            time: ticks,
+            cid:  parts[1]
+        });
+    }
 
-            id:   parts[1],
-            user: connection && connection.state ? connection.state.user : undefined
+    function messageRemove(row) {
+        // split the row id to get the user and time details
+        var parts = row.id.split('|'),
+            ticks = parseInt(parts[0]);
+
+        debug('captured message removal, triggering MSGREMOVE event');
+        room.emit('message', {
+            type: 'MSGREMOVE',
+            time: ticks,
+            cid:  parts[1]
         });
     }
 
@@ -92,6 +103,7 @@ Chatroom.prototype.open = function() {
 
     // wire up event handler
     this.messages.on('add', messageAdd);
+    this.messages.on('remove', messageRemove);
     this.connections.on('add', connectionAdd);
     this.connections.on('changes', connectionChanged);
     this.connections.on('remove', connectionRemove);

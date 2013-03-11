@@ -55,7 +55,7 @@ describe('chat authentication tests', function() {
 
         client.once('data', function(msg) {
             assert.equal(msg.data, 'hello');
-            assert.equal(msg.id, connections[0].id);
+            assert.equal(msg.cid, connections[0].id);
 
             done();
         });
