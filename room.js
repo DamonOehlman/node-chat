@@ -137,7 +137,16 @@ Chatroom.prototype.connect = function() {
                 // rewrite userjoin and userleave events as join and leave
                 // for the current connection
                 if (msg.id === id && msg.type && msg.type.slice(0, 4) === 'USER') {
-                    msg.type = msg.type.slice(4);
+                    // create a new version of the message for the user
+                    msg = {
+                        type: msg.type.slice(4),
+                        data: msg.data,
+                        time: msg.time,
+
+                        id:   msg.id,
+                        user: msg.user
+
+                    };
                 }
 
                 debug('--> stream data (cid: ' + id + '):', msg);

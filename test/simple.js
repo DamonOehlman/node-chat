@@ -15,7 +15,7 @@ describe('simple chat room initialization and client tests', function() {
     });
 
     it('should be able to send messages to the room', function(done) {
-        var client = chat.client();
+        var client = chat.client(connections[0]);
 
         room.on('message', function handleMessage(msg) {
             if (msg.data === 'hello') {
@@ -24,25 +24,20 @@ describe('simple chat room initialization and client tests', function() {
             }
         });
 
-        client.pipe(connections[0]).pipe(client);
-
         client.identify({ nick: randomName().replace(/\s/g, '') });
-        client.createWriteStream().write('hello');
+        client.write('hello');
     });
 
     it('should be able to capture messages coming via the connected stream', function(done) {
-        var client = chat.client(),
-            stream = client.createStream();
+        var client = chat.client(connections[0]);
 
-        client.pipe(connections[0]).pipe(client);
-
-        stream.once('data', function(msg) {
+        client.once('data', function(msg) {
             assert.equal(msg.data, 'hello');
             assert.equal(msg.id, connections[0].id);
 
             done();
         });
 
-        stream.write('hello');
+        client.write('hello');
     });
 });

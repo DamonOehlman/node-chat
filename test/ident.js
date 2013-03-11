@@ -12,15 +12,13 @@ describe('user identification tests', function() {
     });
 
     it('should be able to connect to the room', function() {
-        client = chat.client();
-
-        client.pipe(room.connect()).pipe(client);
+        client = chat.client(room.connect());
     });
 
     it('should be able to provide user details for the connection', function(done) {
         var nick = randomName().replace(/\s/g, '');
 
-        client.createReadStream().once('data', function(msg) {
+        client.once('data', function(msg) {
             assert.equal(msg.type, 'JOIN');
             assert(msg.user, 'No user details found');
             assert.equal(msg.user.nick, nick, 'User details did not match provided');
@@ -32,21 +30,16 @@ describe('user identification tests', function() {
     });
 
     it('should receive a USERJOIN event for another client joining', function(done) {
-        var client2 = chat.client(),
-            nick = randomName().replace(/\s/g, '');
-
-        // connect
-        client2.pipe(room.connect()).pipe(client2);
+        var nick = randomName().replace(/\s/g, ''),
+            client2 = chat.client(room.connect(), { nick: nick });
 
         // listen for the user join event 
-        client.createReadStream().once('data', function(msg) {
+        client.once('data', function(msg) {
             assert.equal(msg.type, 'USERJOIN');
             assert(msg.user, 'No user details found');
             assert.equal(msg.user.nick, nick, 'User details did not match provided');
 
             done();
         });
-
-        client2.identify({ nick: nick });
     });
 });
