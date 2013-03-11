@@ -1,4 +1,5 @@
-var Doc = require('crdt/doc'),
+var debug = require('debug')('chat-room'),
+    Doc = require('crdt/doc'),
     util = require('util'),
     uuid = require('uuid'),
     MuxDemux = require('mux-demux');
@@ -55,8 +56,8 @@ Chatroom.prototype.open = function() {
     function connectionChanged(row, changed) {
         if (changed) {
             // if the user is changed, then process authentication 
-            if (changed.user) {
-                row.set('authenticated', false);
+            if (changed.user && (! row.state.authenticated)) {
+                debug('detected user details changed, running authentication');
 
                 // if we have authentication listeners, then trigger with the user details
                 if (room.listeners('authenticate').length > 0) {
@@ -67,7 +68,8 @@ Chatroom.prototype.open = function() {
                     row.set('authenticated', true);                
                 }
             }
-            else if (changed.authenticated === true) {
+            
+            if (changed.authenticated === true) {
                 room.emit('message', {
                     type: 'USERJOIN',
                     time: new Date(),
@@ -121,13 +123,39 @@ Chatroom.prototype.connect = function() {
         connection;
 
     // add the connection
+    debug('adding a new connection to the chat room, cid: ' + id);
     connection = this.add({ id: id, type: 'connection' });
 
     // create the muxdemux instance
     mdm = MuxDemux();
     mdm.on('connection', function(stream) {
+        debug('received stream for room connection: ' + id);
+
+        function handleMessage(msg) {
+            // only write messages out if the user is authenticated
+            if (connection.state.authenticated) {
+                // rewrite userjoin and userleave events as join and leave
+                // for the current connection
+                if (msg.id === id && msg.type && msg.type.slice(0, 4) === 'USER') {
+                    msg.type = msg.type.slice(4);
+                }
+
+                debug('--> stream data (cid: ' + id + '):', msg);
+                stream.write(msg);
+            }
+        }
+
+        stream.on('close', function() {
+            debug('stream closed - decoupling message handler');
+            room.removeListener('message', handleMessage);
+
+            // TODO: check the count of streams and if 0, remove the connection
+        });
+
         if (stream.readable) {
             stream.on('data', function(data) {
+                debug('<-- stream data (cid: ' + id + '): ', data);
+
                 if (typeof data == 'string' || (data instanceof String) || (data instanceof Buffer)) {
                     room.processMessage(connection, data);
                 }
@@ -148,12 +176,7 @@ Chatroom.prototype.connect = function() {
 
         if (stream.writable) {
             // if the user is authenticated, then send messages
-            room.on('message', function(msg) {
-                // only write messages out if the user is authenticated
-                if (connection.state.authenticated) {
-                    stream.write(msg);
-                }
-            });
+            room.on('message', handleMessage);
         }
     });
 

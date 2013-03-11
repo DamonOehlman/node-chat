@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "crdt": "3.4.x",
+    "debug": "*",
     "mux-demux": "3.5.x",
     "uuid": "1.4.x"
   },
