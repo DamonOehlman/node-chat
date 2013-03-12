@@ -8,6 +8,9 @@ var client = module.exports = function(roomStream, user) {
     function waitForJoin(data) {
         if (data && data.type === 'JOIN') {
             stream.removeListener('data', waitForJoin);
+
+            // patch the cid into the stream
+            stream.cid = data.id;
             stream.emit('ready');
         }
     }
@@ -25,10 +28,11 @@ var client = module.exports = function(roomStream, user) {
     client.pipe(roomStream).pipe(client);
 
     // patch in an identify method into the stream
-    stream.identify = function(details) {
+    stream.identify = function(details, permissions) {
         stream.write({
             type: 'ident',
-            user: details
+            user: details,
+            permissions: permissions
         });
     };
 

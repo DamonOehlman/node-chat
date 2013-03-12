@@ -188,7 +188,7 @@ Chatroom.prototype.connect = function() {
                         break;
 
                     case 'ident':
-                        room.processIdent(connection, data);
+                        room.processIdent(connection, data.user, data.permissions);
                         break;
                     }
                 }
@@ -210,9 +210,14 @@ Chatroom.prototype.connect = function() {
 /**
 ## processIdent(connection, data)
 */
-Chatroom.prototype.processIdent = function(connection, data) {
+Chatroom.prototype.processIdent = function(connection, user, permissions) {
+    debug('processing ident for connection: ' + connection.id, user, permissions);
+
     // set the user details for the connection
-    connection.set('user', data.user);
+    connection.set('user', user);
+
+    // if we have permissions set those details
+    connection.set('permissions', permissions);
 };
 
 /**
@@ -221,7 +226,7 @@ Chatroom.prototype.processIdent = function(connection, data) {
 Chatroom.prototype.processMessage = function(connection, text) {
     var id;
 
-    if (! connection.state.authenticated) return;
+    if ((! connection.state.authenticated) || (connection.state.permissions === 'readonly')) return;
 
     this.add({
         id: new Date().getTime() + '|' + connection.id, 
