@@ -1,7 +1,7 @@
 var MuxDemux = require('mux-demux'),
     Stream = require('stream');
 
-var client = module.exports = function(roomStream, user) {
+var client = module.exports = function(roomStream, user, permissions) {
     var client = MuxDemux(),
         stream = client.createStream();
 
@@ -40,7 +40,7 @@ var client = module.exports = function(roomStream, user) {
     stream.on('data', waitForJoin);
 
     // if we have been provided an identity, then send the ident message on the stream
-    if (user) stream.identify(user);
+    if (user) stream.identify(user, permissions);
 
     // return the stream
     return stream;
