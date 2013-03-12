@@ -217,7 +217,9 @@ Chatroom.prototype.processIdent = function(connection, user, permissions) {
     connection.set('user', user);
 
     // if we have permissions set those details
-    connection.set('permissions', permissions);
+    if (typeof permissions != 'undefined') {
+        connection.set('permissions', permissions);
+    }
 };
 
 /**
