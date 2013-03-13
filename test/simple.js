@@ -29,15 +29,17 @@ describe('simple chat room initialization and client tests', function() {
     });
 
     it('should be able to capture messages coming via the connected stream', function(done) {
-        var client = chat.client(connections[0]);
+        var client = chat.client(room.connect());
 
-        client.once('data', function(msg) {
-            assert.equal(msg.data, 'hello');
-            assert.equal(msg.cid, connections[0].id);
-
-            done();
+        client.once('data', function handleMessage(msg) {
+            if (msg.data === 'hello') {
+                room.removeListener('message', handleMessage);
+                done();
+            }
         });
 
-        client.write('hello');
+        client.identify({ nick: randomName().replace(/\s/g, '') }).on('ready', function() {
+            client.write('hello');
+        });
     });
 });

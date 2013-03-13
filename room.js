@@ -166,11 +166,23 @@ Chatroom.prototype.connect = function() {
             }
         }
 
+        // increment the count of streams for this connection
+        connection.streams = (connection.streams || 0) + 1;
+
+        // handle close events
         stream.on('close', function() {
             debug('stream closed - decoupling message handler');
             room.removeListener('message', handleMessage);
 
-            // TODO: check the count of streams and if 0, remove the connection
+            // decrement the streams count
+            if (connection.streams) {
+                connection.streams -= 1;
+            }
+
+            // if we have no streams connected, then remove the connection
+            if (! connection.streams) {
+                room.connections.remove(id);
+            }
         });
 
         if (stream.readable) {

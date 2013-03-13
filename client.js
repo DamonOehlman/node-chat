@@ -34,6 +34,8 @@ var client = module.exports = function(roomStream, user, permissions) {
             user: details,
             permissions: permissions
         });
+
+        return stream;
     };
 
     // connect the wait for join message handler
