@@ -42,4 +42,20 @@ describe('user identification tests', function() {
             done();
         });
     });
+
+    it('should report existing users within the room on JOINing a room', function(done) {
+        var nick = randomName().replace(/\s/g, ''),
+            client3 = chat.client(room.connect(), { nick: nick });
+
+        client3.once('data', function(msg) {
+            assert.equal(msg.type, 'JOIN');
+            assert(msg.meta, 'No room metadata found in the join data');
+            assert(msg.meta.users, 'No user list in the metadata');
+            assert.equal(msg.meta.users.length, 3, 'Should have three users in the room');
+
+            done();
+        });
+
+        client.identify({ nick: nick });
+    });
 });

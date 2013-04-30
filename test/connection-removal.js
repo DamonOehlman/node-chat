@@ -53,7 +53,7 @@ describe('connection removal tests', function() {
 
         function handleMessage(msg) {
             assert.equal(msg.type, 'USERLEAVE');
-            assert.equal(msg.id, clients[0].cid);
+            assert.equal(msg.cid, clients[0].cid);
 
             // increment the notification count
             notificationCount += 1;
@@ -74,7 +74,7 @@ describe('connection removal tests', function() {
     it('should be able to end the second client stream', function(done) {
         room.once('message', function(msg) {
             assert.equal(msg.type, 'USERLEAVE');
-            assert.equal(msg.id, clients[1].cid);
+            assert.equal(msg.cid, clients[1].cid);
             done();
         });
 

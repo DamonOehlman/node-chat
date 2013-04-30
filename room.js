@@ -85,7 +85,7 @@ Chatroom.prototype.open = function() {
                     type: 'USERJOIN',
                     time: new Date(),
 
-                    id:   row.id,
+                    cid:  row.id,
                     user: row.state.user
                 });        
             }
@@ -97,7 +97,7 @@ Chatroom.prototype.open = function() {
             type: 'USERLEAVE',
             time: new Date(),
 
-            id:   row.id
+            cid:  row.id
         });
     }
 
@@ -148,16 +148,18 @@ Chatroom.prototype.connect = function() {
             if (connection.state.authenticated) {
                 // rewrite userjoin and userleave events as join and leave
                 // for the current connection
-                if (msg.id === id && msg.type && msg.type.slice(0, 4) === 'USER') {
+                if (msg.cid === id && msg.type && msg.type.slice(0, 4) === 'USER') {
                     // create a new version of the message for the user
                     msg = {
                         type: msg.type.slice(4),
                         data: msg.data,
                         time: msg.time,
 
-                        id:   msg.id,
-                        user: msg.user
+                        cid:  msg.cid,
+                        user: msg.user,
 
+                        // add the room meta data
+                        meta: room.metadata
                     };
                 }
 
@@ -248,3 +250,25 @@ Chatroom.prototype.processMessage = function(connection, text) {
         data: text 
     });
 };
+
+/**
+## metadata property
+*/
+
+Object.defineProperty(Chatroom.prototype, 'metadata', {
+    get: function() {
+        var validConnections = this.connections._array.filter(function(conn) {
+                return conn.state.authenticated;
+            }),
+            users = validConnections.map(function(conn) {
+                return {
+                    cid: conn.state.id,
+                    user: conn.state.user
+                };
+            });
+
+        return {
+            users: users
+        };
+    }
+});

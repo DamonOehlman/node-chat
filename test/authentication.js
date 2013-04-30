@@ -41,7 +41,7 @@ describe('chat authentication tests', function() {
 
         room.once('message', function(msg) {
             assert.equal(msg.type, 'USERJOIN');
-            assert.equal(msg.id, connections[0].id);
+            assert.equal(msg.cid, connections[0].id);
 
             done();
         });

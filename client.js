@@ -10,7 +10,7 @@ var client = module.exports = function(roomStream, user, permissions) {
             stream.removeListener('data', waitForJoin);
 
             // patch the cid into the stream
-            stream.cid = data.id;
+            stream.cid = data.cid;
             stream.emit('ready');
         }
     }
