@@ -259,16 +259,15 @@ Object.defineProperty(Chatroom.prototype, 'metadata', {
     get: function() {
         var validConnections = this.connections._array.filter(function(conn) {
                 return conn.state.authenticated;
-            }),
-            users = validConnections.map(function(conn) {
+            });
+
+        return {
+            connections: validConnections.map(function(conn) {
                 return {
                     cid: conn.state.id,
                     user: conn.state.user
                 };
-            });
-
-        return {
-            users: users
+            })
         };
     }
 });

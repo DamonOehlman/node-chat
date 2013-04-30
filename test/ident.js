@@ -50,8 +50,8 @@ describe('user identification tests', function() {
         client3.once('data', function(msg) {
             assert.equal(msg.type, 'JOIN');
             assert(msg.meta, 'No room metadata found in the join data');
-            assert(msg.meta.users, 'No user list in the metadata');
-            assert.equal(msg.meta.users.length, 3, 'Should have three users in the room');
+            assert(msg.meta.connections, 'No connection list in the metadata');
+            assert.equal(msg.meta.connections.length, 3, 'Should have three users in the room');
 
             done();
         });
