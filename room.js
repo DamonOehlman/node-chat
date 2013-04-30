@@ -264,7 +264,7 @@ Object.defineProperty(Chatroom.prototype, 'metadata', {
         return {
             connections: validConnections.map(function(conn) {
                 return {
-                    cid: conn.state.id,
+                    id: conn.state.id,
                     user: conn.state.user
                 };
             })

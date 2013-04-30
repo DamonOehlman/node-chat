@@ -45,13 +45,23 @@ describe('user identification tests', function() {
 
     it('should report existing users within the room on JOINing a room', function(done) {
         var nick = randomName().replace(/\s/g, ''),
-            client3 = chat.client(room.connect(), { nick: nick });
+            client3 = chat.client(room.connect(), { nick: nick }),
+            ids;
 
         client3.once('data', function(msg) {
             assert.equal(msg.type, 'JOIN');
             assert(msg.meta, 'No room metadata found in the join data');
             assert(msg.meta.connections, 'No connection list in the metadata');
             assert.equal(msg.meta.connections.length, 3, 'Should have three users in the room');
+
+            // extract the ids from the connections
+            ids = msg.meta.connections.map(function(conn) {
+                return conn.id;
+            });
+
+            // ensure client 1 is found
+            assert(ids.indexOf(client.cid) >= 0, 'Could not find client 1 in list of connections');
+            assert(ids.indexOf(client3.cid) >= 0, 'Could not find client 3 in list of connections');
 
             done();
         });
