@@ -15,6 +15,10 @@ var client = module.exports = function(roomStream, user, permissions) {
         }
     }
 
+    // if we don't have a room stream just return the client
+    // as we are doing things manually
+    if (! roomStream) return client;
+
     // if the room is not an instanceof stream, do a few checks
     if (! (roomStream instanceof Stream)) {
         // check if we have a connect function, if so, the connect
@@ -25,10 +29,6 @@ var client = module.exports = function(roomStream, user, permissions) {
             throw new Error('If arguments are provided, the first argument must be a stream');
         }
     }
-
-    // if we don't have a room stream just return the client
-    // as we are doing things manually
-    if (! roomStream) return client;
 
     // pipe from the new client into the stream and back
     client.pipe(roomStream).pipe(client);
