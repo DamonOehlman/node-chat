@@ -12,7 +12,7 @@ describe('user identification tests', function() {
     });
 
     it('should be able to connect to the room', function() {
-        client = chat.client(room.connect());
+        client = chat.client(room);
     });
 
     it('should be able to provide user details for the connection', function(done) {
@@ -67,5 +67,17 @@ describe('user identification tests', function() {
         });
 
         client.identify({ nick: nick });
+    });
+
+    it('should report metadata in the ready event', function(done) {
+        var nick = randomName().replace(/\s/g, ''),
+            client4 = chat.client(room, { nick: nick });
+
+        client4.once('ready', function(metadata) {
+            assert(metadata, 'No metadata received in the ready event');
+            assert.equal(metadata.connections.length, 4, 'Did not get the expected 4 connections');
+
+            done();
+        });
     });
 });

@@ -11,13 +11,19 @@ var client = module.exports = function(roomStream, user, permissions) {
 
             // patch the cid into the stream
             stream.cid = data.cid;
-            stream.emit('ready');
+            stream.emit('ready', data.meta);
         }
     }
 
-    // if the stream is not a stream, then remap args
+    // if the room is not an instanceof stream, do a few checks
     if (! (roomStream instanceof Stream)) {
-        throw new Error('If arguments are provided, the first argument must be a stream');
+        // check if we have a connect function, if so, the connect
+        if (typeof roomStream.connect == 'function') {
+            roomStream = roomStream.connect();
+        }
+        else {
+            throw new Error('If arguments are provided, the first argument must be a stream');
+        }
     }
 
     // if we don't have a room stream just return the client
