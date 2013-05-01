@@ -50,3 +50,9 @@ client.once('ready', function(metadata) {
 ```
 
 For the full example, see [examples/hello.js](examples/hello.js).
+
+## Transport Free
+
+Obviously, this isn't the first chat implementation written in Node.  It is, however, one of the first to be written that isn't tied to a specific transport implementation (usually WebSockets).
+
+An example of a pure socket level chat server and client can be found in the [examples](examples/) directory.
