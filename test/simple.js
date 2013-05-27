@@ -42,4 +42,23 @@ describe('simple chat room initialization and client tests', function() {
             client.write('hello');
         });
     });
+
+    it('should receive a message backlog for a new connection', function(done) {
+        var client = chat.client(room.connect());
+
+        client.identify({ nick: randomName().replace(/\s/g, '') }).on('ready', function(metadata) {
+            // validate that we have a backlog
+            assert(metadata.backlog);
+
+            // validate the 2 messages are in the backlog
+            assert.equal(metadata.backlog.length, 2);
+
+            // validate both messages say "hello"
+            metadata.backlog.forEach(function(msg) {
+                assert.equal(msg.data, 'hello');
+            });
+
+            done();
+        });
+    });
 });

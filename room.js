@@ -15,6 +15,9 @@ function Chatroom(opts) {
     // init
     this.store = {};
 
+    // initialise the backlog size (default to 100 messages)
+    this.backlogSize = typeof opts.backlogSize != 'undefined' ? opts.backlogSize : 100;
+
     // initialise the messages
     this.messages = this.createSeq('type', 'message');
 
@@ -259,9 +262,14 @@ Object.defineProperty(Chatroom.prototype, 'metadata', {
     get: function() {
         var validConnections = this.connections._array.filter(function(conn) {
                 return conn.state.authenticated;
-            });
+            }),
+            msgCount = this.messages._array.length;
 
         return {
+            // provide message backlog
+            backlog: this.messages._array.slice(Math.max(0, msgCount - this.backlogSize), this.backlogSize),
+
+            // provide connection information
             connections: validConnections.map(function(conn) {
                 return {
                     id: conn.state.id,
