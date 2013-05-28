@@ -199,14 +199,15 @@ Chatroom.prototype.connect = function() {
                 }
                 else if (typeof data == 'object') {
                     switch (data.type) {
+                        // process known types
+                        case 'ident':
+                            room.processIdent(connection, data.user, data.permissions);
+                            break;
 
-                    case 'message':
-                        room.processMessage(connection, data.data || data.message || data.text);
-                        break;
-
-                    case 'ident':
-                        room.processIdent(connection, data.user, data.permissions);
-                        break;
+                        // handle unknown types, fallback to message passing
+                        default:
+                            room.processMessage(connection, data.data || data.message || data.text || data);
+                            break;
                     }
                 }
             });

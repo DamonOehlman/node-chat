@@ -3,7 +3,8 @@ var MuxDemux = require('mux-demux'),
 
 var client = module.exports = function(roomStream, user, permissions) {
     var client = MuxDemux(),
-        stream = client.createStream();
+        stream = client.createStream(),
+        write = stream.write;
 
     function waitForJoin(data) {
         if (data && data.type === 'JOIN') {
